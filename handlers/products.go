@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -10,6 +12,8 @@ import (
 	"waysfood/models"
 	"waysfood/repositories"
 
+	"github.com/cloudinary/cloudinary-go/v2"
+	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
@@ -33,10 +37,10 @@ func (h *handlerProduct) FindProducts(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	for i, p := range products {
-		imagePath := os.Getenv("PATH_FILE") + p.Image
-		products[i].Image = imagePath
-	}
+	// for i, p := range products {
+	// 	imagePath := os.Getenv("PATH_FILE") + p.Image
+	// 	products[i].Image = imagePath
+	// }
 
 	w.WriteHeader(http.StatusOK)
 	response := dto.SuccessResult{Code: http.StatusOK, Data: products}
@@ -55,7 +59,7 @@ func (h *handlerProduct) GetProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	product.Image = os.Getenv("PATH_FILE") + product.Image
+	// product.Image = os.Getenv("PATH_FILE") + product.Image
 
 	w.WriteHeader(http.StatusOK)
 	response := dto.SuccessResult{Code: http.StatusOK, Data: product}
@@ -69,7 +73,7 @@ func (h *handlerProduct) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	userId := int(userInfo["id"].(float64))
 
 	dataContex := r.Context().Value("dataFile") // add this code
-	filename := dataContex.(string)             // add this code
+	filepath := dataContex.(string)             // add this code
 
 	price, _ := strconv.Atoi(r.FormValue("price"))
 
@@ -87,9 +91,24 @@ func (h *handlerProduct) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var ctx = context.Background()
+	var CLOUD_NAME = os.Getenv("CLOUD_NAME")
+	var API_KEY = os.Getenv("API_KEY")
+	var API_SECRET = os.Getenv("API_SECRET")
+
+	// Add your Cloudinary credentials ...
+	cld, _ := cloudinary.NewFromParams(CLOUD_NAME, API_KEY, API_SECRET)
+
+	// Upload file to Cloudinary ...
+	resp, err := cld.Upload.Upload(ctx, filepath, uploader.UploadParams{Folder: "waysfood"})
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
 	product := models.Product{
 		Title:  request.Title,
-		Image:  filename,
+		Image:  resp.SecureURL,
 		Price:  request.Price,
 		UserID: userId,
 	}
