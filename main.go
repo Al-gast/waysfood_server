@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"waysfood/database"
@@ -37,8 +36,8 @@ func main() {
 
 	// var port = "5000"
 	var port = os.Getenv("PORT")
-	fmt.Println("server running localhost:" + port)
+	// fmt.Println("server running localhost:" + port)
 
 	// Embed the setup allowed in 2 parameter on this below code ...
-	http.ListenAndServe("localhost:"+port, handlers.CORS(AllowedHeaders, AllowedMethods, AllowedOrigins)(r))
+	http.ListenAndServe(":"+port, handlers.CORS(AllowedHeaders, AllowedMethods, AllowedOrigins)(r))
 }
